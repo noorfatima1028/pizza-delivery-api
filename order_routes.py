@@ -107,3 +107,47 @@ async def list_all_orders(
     orders = session.query(Order).all()
 
     return jsonable_encoder(orders)
+
+
+@order_router.get("/{id}", status_code=status.HTTP_200_OK)
+async def get_order(
+    id: int,
+    Authorize: AuthJWT = Depends()
+):
+    try:
+        Authorize.jwt_required()
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        )
+
+    current_username = Authorize.get_jwt_subject()
+
+    current_user = session.query(User).filter(
+        User.username == current_username
+    ).first()
+
+    if current_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    if not current_user.is_staff:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="You are not a superuser"
+        )
+
+    order = session.query(Order).filter(
+        Order.id == id
+    ).first()
+
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Order with id {id} not found"
+        )
+
+    return jsonable_encoder(order)
