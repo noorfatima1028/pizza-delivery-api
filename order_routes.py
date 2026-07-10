@@ -9,7 +9,7 @@ from schema import OrderModel
 
 order_router = APIRouter(
     prefix="/orders",
-    tags=["order"]
+    tags=["orders"]
 )
 
 session = Session(bind=engine)
@@ -58,7 +58,6 @@ async def place_an_order(
         pizza_size=order.pizza_size
     )
 
-    # Associate the order with the logged-in user
     new_order.user = user
 
     session.add(new_order)
@@ -73,3 +72,38 @@ async def place_an_order(
     }
 
     return jsonable_encoder(response)
+
+
+@order_router.get("/orders", status_code=status.HTTP_200_OK)
+async def list_all_orders(
+    Authorize: AuthJWT = Depends()
+):
+    try:
+        Authorize.jwt_required()
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        )
+
+    current_user = Authorize.get_jwt_subject()
+
+    user = session.query(User).filter(
+        User.username == current_user
+    ).first()
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    if not user.is_staff:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="You are not a superuser"
+        )
+
+    orders = session.query(Order).all()
+
+    return jsonable_encoder(orders)
