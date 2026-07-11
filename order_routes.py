@@ -5,7 +5,7 @@ from fastapi_jwt_auth import AuthJWT
 
 from database import Session, engine
 from models import Order, User
-from schema import OrderModel
+from schema import OrderModel, OrderStatusModel
 
 order_router = APIRouter(
     prefix="/orders",
@@ -242,6 +242,55 @@ async def update_order(
 
     order_to_update.quantity = order.quantity
     order_to_update.pizza_size = order.pizza_size
+
+    session.commit()
+    session.refresh(order_to_update)
+
+    return jsonable_encoder(order_to_update)
+
+@order_router.patch("/order/update/{id}/", status_code=status.HTTP_200_OK)
+async def update_order_status(
+    id: int,
+    order: OrderStatusModel,
+    Authorize: AuthJWT = Depends()
+):
+    try:
+        Authorize.jwt_required()
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        )
+
+    username = Authorize.get_jwt_subject()
+
+    current_user = session.query(User).filter(
+        User.username == username
+    ).first()
+
+    if current_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    if not current_user.is_staff:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="You are not a superuser"
+        )
+
+    order_to_update = session.query(Order).filter(
+        Order.id == id
+    ).first()
+
+    if order_to_update is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found"
+        )
+
+    order_to_update.order_status = order.order_status
 
     session.commit()
     session.refresh(order_to_update)
