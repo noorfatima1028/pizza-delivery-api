@@ -215,3 +215,35 @@ async def get_specific_order(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail="No order with such id"
     )
+
+@order_router.put("/order/update/{id}", status_code=status.HTTP_200_OK)
+async def update_order(
+    id: int,
+    order: OrderModel,
+    Authorize: AuthJWT = Depends()
+):
+    try:
+        Authorize.jwt_required()
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        )
+
+    order_to_update = session.query(Order).filter(
+        Order.id == id
+    ).first()
+
+    if order_to_update is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found"
+        )
+
+    order_to_update.quantity = order.quantity
+    order_to_update.pizza_size = order.pizza_size
+
+    session.commit()
+    session.refresh(order_to_update)
+
+    return jsonable_encoder(order_to_update)
