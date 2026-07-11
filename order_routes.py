@@ -86,10 +86,10 @@ async def list_all_orders(
             detail="Invalid token"
         )
 
-    current_user = Authorize.get_jwt_subject()
+    current_username = Authorize.get_jwt_subject()
 
     user = session.query(User).filter(
-        User.username == current_user
+        User.username == current_username
     ).first()
 
     if user is None:
@@ -151,3 +151,30 @@ async def get_order(
         )
 
     return jsonable_encoder(order)
+
+
+@order_router.get("/user/orders", status_code=status.HTTP_200_OK)
+async def get_user_order(
+    Authorize: AuthJWT = Depends()
+):
+    try:
+        Authorize.jwt_required()
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        )
+
+    user = Authorize.get_jwt_subject()
+
+    current_user = session.query(User).filter(
+        User.username == user
+    ).first()
+
+    if current_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    return jsonable_encoder(current_user.orders)
