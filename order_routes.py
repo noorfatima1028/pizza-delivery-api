@@ -17,6 +17,11 @@ session = Session(bind=engine)
 
 @order_router.get("/order", status_code=status.HTTP_200_OK)
 async def hello(Authorize: AuthJWT = Depends()):
+
+    """
+    ## A sample hello world route
+    this returns Hello world
+    """
     try:
         Authorize.jwt_required()
     except Exception:
@@ -33,6 +38,12 @@ async def place_an_order(
     order: OrderModel,
     Authorize: AuthJWT = Depends()
 ):
+    """
+    ## Placing an order
+    This requires the following
+    -quantity: integer
+    -pizza_size: str
+    """
     try:
         Authorize.jwt_required()
     except Exception:
@@ -78,6 +89,10 @@ async def place_an_order(
 async def list_all_orders(
     Authorize: AuthJWT = Depends()
 ):
+    """
+    ##list all orders 
+    this lists all orders made.It can be assesed by super users. """
+
     try:
         Authorize.jwt_required()
     except Exception:
@@ -114,6 +129,10 @@ async def get_order(
     id: int,
     Authorize: AuthJWT = Depends()
 ):
+    """
+    ## get an order by its ID
+    This gets its order by an ID and is only assesed by a superuser"""
+
     try:
         Authorize.jwt_required()
     except Exception:
@@ -157,6 +176,10 @@ async def get_order(
 async def get_user_order(
     Authorize: AuthJWT = Depends()
 ):
+    """
+    ## get a current user's orders
+    This lists the orders made by the currently logged in users
+    """
     try:
         Authorize.jwt_required()
     except Exception:
@@ -185,6 +208,11 @@ async def get_specific_order(
     id: int,
     Authorize: AuthJWT = Depends()
 ):
+    
+    """
+    ## Get a specific order by a currently logged in user
+    This returns an order by ID for the currently logged in user
+    """
     try:
         Authorize.jwt_required()
     except Exception:
@@ -221,7 +249,13 @@ async def update_order(
     id: int,
     order: OrderModel,
     Authorize: AuthJWT = Depends()
-):
+): 
+    """
+     ##Updating an order
+      This updates an order and requires the following fields
+      -quantity: integer
+      -pizza_size: str
+      """
     try:
         Authorize.jwt_required()
     except Exception:
@@ -254,6 +288,10 @@ async def update_order_status(
     order: OrderStatusModel,
     Authorize: AuthJWT = Depends()
 ):
+    """
+    ##update an order's status
+     This is for updating an orders status and requires order_status in str
+     """
     try:
         Authorize.jwt_required()
     except Exception:
@@ -302,6 +340,10 @@ async def delete_an_order(
     id: int,
     Authorize: AuthJWT = Depends()
 ):
+    """
+    # Delete an order
+    This delets an order by its ID
+    """
     try:
         Authorize.jwt_required()
     except Exception:
