@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi_jwt_auth import AuthJWT
-
+from sqlalchemy.orm import Session
 from database import Session, engine
 from models import Order, User
 from schema import OrderModel, OrderStatusModel
@@ -296,3 +296,31 @@ async def update_order_status(
     session.refresh(order_to_update)
 
     return jsonable_encoder(order_to_update)
+
+@order_router.delete("/order/delete/{id}/", status_code=status.HTTP_200_OK)
+async def delete_an_order(
+    id: int,
+    Authorize: AuthJWT = Depends()
+):
+    try:
+        Authorize.jwt_required()
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        )
+
+    order_to_delete = session.query(Order).filter(
+        Order.id == id
+    ).first()
+
+    if order_to_delete is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found"
+        )
+
+    session.delete(order_to_delete)
+    session.commit()
+
+    return jsonable_encoder(order_to_delete)
